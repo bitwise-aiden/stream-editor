@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3 uid="uid://c77re2ow28lg7"]
+
+[ext_resource type="Material" uid="uid://bk5w3f5bdl8lx" path="res://addons/stream-editor/camera/camera_feed.material" id="1_wwnr1"]
+[ext_resource type="Script" uid="uid://8pds6ajlasd3" path="res://addons/stream-editor/camera/camera_feed.gd" id="2_sso7h"]
+
+[node name="Camera" type="PanelContainer"]
+material = ExtResource("1_wwnr1")
+clip_contents = true
+custom_minimum_size = Vector2(600, 600)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="feed" type="ColorRect" parent="."]
+material = ExtResource("1_wwnr1")
+custom_minimum_size = Vector2(600, 600)
+layout_mode = 2
+script = ExtResource("2_sso7h")
