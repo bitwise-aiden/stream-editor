@@ -24,6 +24,8 @@ var __state : int
 
 var __regex_message : RegEx
 
+var __message_queue : Array[Message]
+
 
 # Lifecycle methods
 
@@ -50,6 +52,10 @@ func _process(
 					var messages : String = __socket.get_packet().get_string_from_utf8()
 					for message : String in messages.split("\r\n", false):
 						__handle_incoming_message(message)
+
+				while !__message_queue.is_empty() && __message_queue.front().should_output():
+					var message : Message = __message_queue.pop_front()
+					message.output()
 			else:
 				__state |= State.connected
 
@@ -84,7 +90,7 @@ func __download_emote(
 	id : String,
 	path : String,
 ) -> void:
-	var url : String = "https://static-cdn.jtvnw.net/emoticons/v2/%s/default/dark/2.0" % id
+	var url : String = "https://static-cdn.jtvnw.net/emoticons/v2/%s/default/dark/1.0" % id
 
 	var request : HTTPRequest = HTTPRequest.new()
 	add_child(request)
@@ -95,8 +101,20 @@ func __download_emote(
 	remove_child(request)
 
 	if result[1] == 200:
-		var file_access : FileAccess = FileAccess.open(path, FileAccess.WRITE)
-		file_access.store_buffer(result[3])
+		var data : PackedByteArray = result[3]
+		var image : Image = Image.new()
+
+
+		var error : Error = image.load_png_from_buffer(data)
+
+		if error != OK:
+			DirAccess.copy_absolute(
+				"res://addons/stream-editor/cache/missing.png",
+				path,
+			)
+			return
+
+		image.save_png(path)
 
 
 func __handle_incoming_message(
@@ -125,22 +143,22 @@ func __handle_incoming_message(
 				__state |= State.joined
 				print("Joined %s" % __CHANNEL)
 		"PRIVMSG":
-			var color : String = tags["color"]
-			var display_name : String = tags["display-name"]
-			var user_message : String = remainder.split(":", 1)[-1]
+			var user_color : String = tags["color"]
+			var user_name : String = tags["display-name"]
+			var user_message : String = remainder.split(":", false, 1)[-1]
+			var first_time_chatter : bool = tags["first-msg"] == "1"
+			var emotes : Dictionary[String, String] = __parse_emotes(user_message, tags["emotes"])
 
-			user_message = __replace_emotes(user_message, tags["emotes"])
-
-			var display_message : String = "[color=%s]%s[/color] %s" % [
-				color,
-				display_name,
+			var message_instance : Message = Message.new(
 				user_message,
-			]
+				user_name,
+				user_color,
+				emotes,
+				first_time_chatter,
+			)
 
-			if tags["first-msg"] == "1":
-				display_message = "[wave amp=50.0 freq=5.0 connected=1]%s[/wave]" % display_message
+			__message_queue.append(message_instance)
 
-			print_rich(display_message)
 
 
 func __parse_tags(
@@ -159,13 +177,13 @@ func __parse_tags(
 	return tags
 
 
-func __replace_emotes(
+func __parse_emotes(
 	message : String,
 	emotes : String,
-) -> String:
+) -> Dictionary[String, String]:
 	var emote_data : Dictionary[String, String]
 
-	for emote : String in emotes.split("/"):
+	for emote : String in emotes.split("/", false):
 		var parts : PackedStringArray = emote.split(":")
 		var id : String = parts[0]
 
@@ -183,15 +201,7 @@ func __replace_emotes(
 
 		emote_data[emote_text] = emote_path
 
-	for emote_text : String in emote_data:
-		var emote_path : String = emote_data[emote_text]
-
-		if !FileAccess.file_exists(emote_path):
-			emote_path = "res://addons/stream-editor/cache/missing.png"
-
-		message = message.replace(emote_text, "[img]%s[/img]" % emote_path)
-
-	return message
+	return emote_data
 
 
 func __send(

@@ -5,6 +5,7 @@ extends EditorPlugin
 
 var __camera_scene : PanelContainer
 var __chat_scene : Node
+var __notification_scene : PanelContainer
 
 var __nodes : Array[Node]
 var __target_nodes : Array[String] = [
@@ -36,6 +37,13 @@ func _enter_tree() -> void:
 	__chat_scene = preload("res://addons/stream-editor/chat/chat.tscn").instantiate()
 	add_child(__chat_scene)
 
+	__notification_scene = preload("res://addons/stream-editor/notification/notification.tscn").instantiate()
+	add_control_to_dock(EditorPlugin.DOCK_SLOT_RIGHT_BL, __notification_scene)
+
+	await get_tree().create_timer(5).timeout
+	var toaster : EditorToaster = EditorInterface.get_editor_toaster()
+	toaster.push_toast("ThatGuyIan Subscribed 12 months!", EditorToaster.SEVERITY_ERROR)
+
 
 func _exit_tree() -> void:
 	var editor : Control = get_editor_interface().get_base_control()
@@ -46,10 +54,18 @@ func _exit_tree() -> void:
 
 	if __camera_scene:
 		remove_control_from_docks(__camera_scene)
+		__camera_scene.queue_free()
 		__camera_scene = null
 
 	if __chat_scene:
 		remove_child(__chat_scene)
+		__chat_scene.queue_free()
+		__chat_scene = null
+
+	if __notification_scene:
+		remove_control_from_docks(__notification_scene)
+		__notification_scene.queue_free()
+		__notification_scene = null
 
 
 # Private methods
