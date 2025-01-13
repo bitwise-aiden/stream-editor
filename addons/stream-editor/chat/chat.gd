@@ -25,6 +25,7 @@ var __state : int
 var __regex_message : RegEx
 
 var __message_queue : Array[Message]
+var __emote_downloader : EmoteDownloader
 
 
 # Lifecycle methods
@@ -86,37 +87,6 @@ func send_message(
 
 # Private methods
 
-func __download_emote(
-	id : String,
-	path : String,
-) -> void:
-	var url : String = "https://static-cdn.jtvnw.net/emoticons/v2/%s/default/dark/1.0" % id
-
-	var request : HTTPRequest = HTTPRequest.new()
-	add_child(request)
-
-	request.request(url)
-
-	var result : Array = await request.request_completed
-	remove_child(request)
-
-	if result[1] == 200:
-		var data : PackedByteArray = result[3]
-		var image : Image = Image.new()
-
-
-		var error : Error = image.load_png_from_buffer(data)
-
-		if error != OK:
-			DirAccess.copy_absolute(
-				"res://addons/stream-editor/cache/missing.png",
-				path,
-			)
-			return
-
-		image.save_png(path)
-
-
 func __handle_incoming_message(
 	message : String,
 ) -> void:
@@ -160,7 +130,6 @@ func __handle_incoming_message(
 			__message_queue.append(message_instance)
 
 
-
 func __parse_tags(
 	tag_string : String,
 ) -> Dictionary[String, String]:
@@ -194,10 +163,10 @@ func __parse_emotes(
 		var length : int = int(location_parts[1]) - start + 1
 
 		var emote_text : String = message.substr(start, length)
-		var emote_path : String = "res://addons/stream-editor/cache/%s.png" % emote_text
+		var emote_path : String = "res://addons/stream-editor/cache/%s.tres" % emote_text
 
 		if !FileAccess.file_exists(emote_path):
-			__download_emote(id, emote_path)
+			__emote_downloader.download(id, emote_path)
 
 		emote_data[emote_text] = emote_path
 
