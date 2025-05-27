@@ -10,7 +10,7 @@ enum State { disconnected = 0 , connected = 1 << 0, joined = 1 << 1 }
 # Private constants
 
 # Token generation: https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=g5d7s4wwumnscbt222rrkritljlzdl&redirect_uri=http://localhost&scope=chat:read+chat:edit+channel:moderate+whispers:read+whispers:edit+channel_editor
-const __TOKEN: String = ""
+const __TOKEN: String = "jhzgkc5bw19o6h2zy5ltyq5gfs7d72"
 const __USERNAME: String = "veloperson"
 const __CHANNEL: String = "veloperson"
 
@@ -36,6 +36,49 @@ func _ready():
 
 	__regex_message = RegEx.new()
 	__regex_message.compile(__REGEX_MESSAGE)
+
+	__emote_downloader = EmoteDownloader.new()
+	add_child(__emote_downloader)
+
+
+func __check_animated() -> void:
+	var animated : AnimatedTexture = AnimatedTexture.new()
+	var frame : int = 0
+
+	var frames : Array[ImageTexture]
+
+	for file : String in DirAccess.get_files_at("res://addons/stream-editor/cache"):
+		if !file.ends_with(".png"):
+			continue
+
+		var path : String = "res://addons/stream-editor/cache/%s" % file
+		var file_access : FileAccess = FileAccess.open(path, FileAccess.READ)
+
+		print(file)
+		var image : Image = Image.new()
+		image.load_png_from_buffer(file_access.get_buffer(file_access.get_length()))
+
+		var texture : ImageTexture = ImageTexture.create_from_image(image)
+		frames.append(texture)
+
+	for texture : ImageTexture in frames:
+		animated.set_frame_texture(frame, texture)
+		animated.set_frame_duration(frame, 0.2)
+		print(animated.frames, " ", frame, " ", animated.get_frame_texture(frame))
+
+		frame += 1
+
+	animated.frames = frames.size()
+
+	print("a")
+	var error : Error = ResourceSaver.save(frames.front(), "res://addons/stream-editor/cache/missing.tres")
+	print(error)
+
+	print("b")
+
+	print_rich("[img]res://addons/stream-editor/cache/testing.tres[/img]")
+
+	print("c")
 
 
 func _process(

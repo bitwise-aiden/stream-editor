@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://dc5ui45mtnef2"]
+
+[ext_resource type="Script" uid="uid://cgvr2tu2tuhvj" path="res://addons/stream-editor/event/event.gd" id="1_f1gsm"]
+
+[node name="event" type="Node"]
+script = ExtResource("1_f1gsm")

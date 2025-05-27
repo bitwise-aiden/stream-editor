@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://bi41qoq720eqf"]
+
+[ext_resource type="Script" path="res://addons/stream-editor/example.gd" id="1_jmxmo"]
+
+[node name="example" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_jmxmo")
